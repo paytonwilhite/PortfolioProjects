@@ -137,36 +137,21 @@ Join [Portfolio Project]..CovidVaccinations as vac
 --where dea.continent is not null
 --order by 2,3
 
---Using CTE to find Vaccination Rate by Country (INCORRECT)
---With PopvsVac (continent, location, date, population, new_vaccinations, rolling_vaccinations)
---as
---(
---select dea.continent, dea.location, dea.date, dea.population, cast(vac.new_vaccinations as bigint) as new_vaccinations,
---(sum(convert(bigint, vac.new_vaccinations)) OVER (Partition by dea.location order by dea.location, dea.date)) as rolling_vaccinations
-----(max(rolling_vaccinations)/population)*100
---from [Portfolio Project]..CovidDeaths as dea
---Join [Portfolio Project]..CovidVaccinations as vac
---	On dea.location = vac.location And dea.date = vac.date
---where dea.continent is not null
-----order by 2,3
---)
---select *, (rolling_vaccinations/population)*100 as percent_vaxxed
---From PopvsVac
-
---Using CTE to find Vaccination Rate by Country (CORRECTED)
-With PopvsVac (continent, location, date, population, people_fully_vaccinated)
+--Using CTE to find Vaccination Rate by Country
+With PopvsVac (continent, location, date, population, new_people_vaccinated_smoothed, rolling_vaccinations)
 as
 (
-select dea.continent, dea.location, dea.date, dea.population, cast(vac.people_fully_vaccinated as bigint) as people_fully_vaccinated
+select dea.continent, dea.location, dea.date, dea.population, cast(vac.new_people_vaccinated_smoothed as bigint) as new_people_vaccinated_smoothed,
+(sum(convert(bigint, vac.new_people_vaccinated_smoothed)) OVER (Partition by dea.location order by dea.location, dea.date)) as rolling_vaccinations
+--(max(rolling_vaccinations)/population)*100
 from [Portfolio Project]..CovidDeaths as dea
 Join [Portfolio Project]..CovidVaccinations as vac
 	On dea.location = vac.location And dea.date = vac.date
 where dea.continent is not null
+--order by 2,3
 )
-select *, (people_fully_vaccinated/population)*100 as percent_vaxxed
+select *, (rolling_vaccinations/population)*100 as percent_vaxxed
 From PopvsVac
-where location = 'United States'
-order by location, date
 
 --TEMP TABLE
 Drop table if exists #PercentPopulationVaccinated
